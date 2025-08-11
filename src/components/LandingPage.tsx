@@ -88,14 +88,14 @@ export function LandingPage() {
                   </Button>
                 </Link>
                 <Link to="/signup">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="border-white text-white hover:bg-white hover:text-gray-900 text-base px-8 py-3 h-auto font-medium"
-                  >
-                    <Play className="mr-2 h-5 w-5" />
-                    Start Learning
-                  </Button>
+                <Button
+  size="lg"
+  className="bg-transparent border-white text-white text-base px-8 py-3 h-auto font-medium"
+>
+  <Play className="mr-2 h-5 w-5" />
+  Start Learning
+</Button>
+
                 </Link>
               </div>
 
@@ -393,13 +393,14 @@ export function LandingPage() {
               </Button>
             </Link>
             <Link to="/courses">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-gray-900 text-base px-8 py-3 h-auto font-medium"
-              >
-                Browse Courses
-              </Button>
+             <Button
+  size="lg"
+  className="bg-transparent border-white text-white text-base px-8 py-3 h-auto font-medium"
+>
+  <Play className="mr-2 h-5 w-5" />
+  Start Learning
+</Button>
+
             </Link>
           </div>
         </div>

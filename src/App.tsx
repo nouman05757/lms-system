@@ -18,6 +18,9 @@ import { ContactPage } from "./components/ContactPage";
 import { StudentDashboard } from "./components/StudentDashboard";
 import { TeacherDashboard } from "./components/TeacherDashboard";
 import { AdminDashboard } from "./components/AdminDashboard";
+import { Footer } from "./components/Footer";
+import {CreateCoursePage} from "./components/CreateCoursePage"; 
+
 
 // Component to handle dashboard routing
 const DashboardRouter = () => {
@@ -53,44 +56,54 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   return user ? <Navigate to="/dashboard" /> : <>{children}</>;
 };
-
 function AppContent() {
   return (
     <Router>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Navigation />
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route
-            path="/login"
-            element={
-              <ProtectedRoute>
-                <LoginPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <ProtectedRoute>
-                <SignupPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/dashboard" element={<DashboardRouter />} />
-        </Routes>
+        
+        {/* Main page content */}
+        <div className="flex-grow">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route
+              path="/login"
+              element={
+                <ProtectedRoute>
+                  <LoginPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <ProtectedRoute>
+                  <SignupPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/dashboard" element={<DashboardRouter />} />
+            <Route path="/create-course" element={<CreateCoursePage />} />
+          </Routes>
+        </div>
+
+        {/* Footer at the bottom */}
+        <Footer />
       </div>
     </Router>
   );
 }
 
+
+
 export default function App() {
   return (
     <AuthProvider>
       <CourseProvider>
+        
         <AppContent />
       </CourseProvider>
     </AuthProvider>

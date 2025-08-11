@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -29,8 +30,10 @@ import {
 import { toast } from "sonner";
 
 export function CoursesPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { courses, enrollInCourse, getEnrolledCourses } = useCourses();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
@@ -39,7 +42,7 @@ export function CoursesPage() {
   const enrolledCourses = user ? getEnrolledCourses(user.id) : [];
   const enrolledCourseIds = enrolledCourses.map((course) => course.id);
 
-  // Filter and sort courses
+  // Filter and sort
   const filteredCourses = courses
     .filter((course) => {
       const matchesSearch =
@@ -76,6 +79,7 @@ export function CoursesPage() {
   const handleEnroll = (courseId: number) => {
     if (!user) {
       toast.error("Please sign in to enroll in courses");
+      navigate("/signup");
       return;
     }
 
@@ -133,8 +137,8 @@ export function CoursesPage() {
         </div>
       </div>
 
+      {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
@@ -193,7 +197,7 @@ export function CoursesPage() {
           </div>
         </div>
 
-        {/* Results Header */}
+        {/* Results */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-gray-900">
             {filteredCourses.length}{" "}
@@ -246,7 +250,6 @@ export function CoursesPage() {
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
-                    {/* Overlay badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                       {course.bestseller && (
                         <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 text-xs font-semibold px-2 py-1">
@@ -261,7 +264,6 @@ export function CoursesPage() {
                       )}
                     </div>
 
-                    {/* Wishlist button */}
                     <div className="absolute top-3 right-3">
                       <Button
                         size="sm"
@@ -272,7 +274,6 @@ export function CoursesPage() {
                       </Button>
                     </div>
 
-                    {/* Enrolled indicator */}
                     {isEnrolled && (
                       <div className="absolute bottom-3 left-3">
                         <Badge className="bg-green-500 text-white border-0 text-xs font-medium px-2 py-1">
@@ -284,7 +285,6 @@ export function CoursesPage() {
                   </div>
 
                   <CardContent className="p-6">
-                    {/* Category */}
                     <div className="flex items-center justify-between mb-2">
                       <Badge
                         variant="secondary"
@@ -297,17 +297,14 @@ export function CoursesPage() {
                       </Badge>
                     </div>
 
-                    {/* Title */}
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-base leading-tight">
                       {course.title}
                     </h3>
 
-                    {/* Instructor */}
                     <p className="text-sm text-gray-600 mb-3">
                       by {course.instructor}
                     </p>
 
-                    {/* Rating & Reviews */}
                     <div className="flex items-center space-x-2 mb-3">
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -320,7 +317,6 @@ export function CoursesPage() {
                       </span>
                     </div>
 
-                    {/* Course stats */}
                     <div className="flex items-center space-x-4 mb-4 text-xs text-gray-500">
                       <div className="flex items-center space-x-1">
                         <Clock className="h-3 w-3" />
@@ -336,7 +332,6 @@ export function CoursesPage() {
                       </div>
                     </div>
 
-                    {/* Price and Action */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <span className="text-lg font-bold text-gray-900">

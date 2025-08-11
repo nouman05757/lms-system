@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -20,21 +21,32 @@ import {
   DollarSign,
   Star,
   Eye,
-  Calendar,
   Award,
   Plus,
   BarChart3,
-  Clock,
   Target,
   MessageCircle,
-  CheckCircle,
   AlertCircle,
   BookPlus,
 } from "lucide-react";
 
+interface Course {
+  title: string;
+  description: string;
+  category: string;
+  students: number | string;
+  revenue: number | string;
+  progress: number | string;
+  lessons: number | string;
+  image: File | null;
+  file: File | null;
+  announcement: string;
+}
+
 export function TeacherDashboard() {
   const { user } = useAuth();
   const { courses, getStudentsInCourse } = useCourses();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
   if (!user) return null;
@@ -126,6 +138,11 @@ export function TeacherDashboard() {
       color: "text-purple-600",
     },
   ];
+
+  // Handle navigation to create course page
+  const handleNavigateToCreateCourse = () => {
+    navigate('/create-course');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -265,7 +282,10 @@ export function TeacherDashboard() {
                           Students will appear here when they enroll in your
                           courses!
                         </p>
-                        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+                        <Button 
+                          onClick={handleNavigateToCreateCourse}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                        >
                           <Plus className="h-4 w-4 mr-2" />
                           Create New Course
                         </Button>
@@ -428,7 +448,10 @@ export function TeacherDashboard() {
                   Create, edit, and monitor your course performance
                 </p>
               </div>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700">
+              <Button 
+                onClick={handleNavigateToCreateCourse}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+              >
                 <BookPlus className="h-4 w-4 mr-2" />
                 Create New Course
               </Button>
