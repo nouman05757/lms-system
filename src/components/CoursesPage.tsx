@@ -34,6 +34,9 @@ export function CoursesPage() {
   const { user } = useAuth();
   const { courses, enrollInCourse, getEnrolledCourses } = useCourses();
 
+  // Toggle this to `false` in production to show only published courses
+  const SHOW_UNPUBLISHED_FOR_DEBUG = true;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
@@ -42,39 +45,51 @@ export function CoursesPage() {
   const enrolledCourses = user ? getEnrolledCourses(user.id) : [];
   const enrolledCourseIds = enrolledCourses.map((course) => course.id);
 
+  // defensive helpers
+  const safeStr = (s?: string) => (s ?? "").toLowerCase();
+  const safeNum = (n?: number) => (typeof n === "number" ? n : 0);
+
   // Filter and sort
   const filteredCourses = courses
     .filter((course) => {
       const matchesSearch =
-        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.instructor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchTerm.toLowerCase());
+        safeStr(course.title).includes(searchTerm.toLowerCase()) ||
+        safeStr(course.instructor).includes(searchTerm.toLowerCase()) ||
+        safeStr(course.description).includes(searchTerm.toLowerCase());
+
       const matchesCategory =
-        selectedCategory === "all" || course.category === selectedCategory;
+        selectedCategory === "all" || (course.category ?? "") === selectedCategory;
       const matchesLevel =
-        selectedLevel === "all" || course.level === selectedLevel;
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesLevel &&
-        course.status === "published"
-      );
+        selectedLevel === "all" || (course.level ?? "") === selectedLevel;
+
+      const statusOk = SHOW_UNPUBLISHED_FOR_DEBUG
+        ? true
+        : (course.status ?? "") === "published";
+
+      return matchesSearch && matchesCategory && matchesLevel && statusOk;
     })
     .sort((a, b) => {
+      const aPrice = safeNum(a.price);
+      const bPrice = safeNum(b.price);
+      const aRating = safeNum(a.rating);
+      const bRating = safeNum(b.rating);
+
       switch (sortBy) {
         case "rating":
-          return b.rating - a.rating;
+          return bRating - aRating;
         case "price":
-          return a.price - b.price;
+          return aPrice - bPrice;
         case "newest":
-          return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+          return new Date(b.updated ?? 0).getTime() - new Date(a.updated ?? 0).getTime();
         case "popular":
         default:
-          return b.students - a.students;
+          return safeNum(b.students) - safeNum(a.students);
       }
     });
 
-  const categories = [...new Set(courses.map((course) => course.category))];
+  const categories = [
+    ...new Set(courses.map((course) => course.category ?? "Uncategorized")),
+  ];
 
   const handleEnroll = (courseId: number) => {
     if (!user) {
@@ -95,15 +110,19 @@ export function CoursesPage() {
     }
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price?: number) => {
+    const p = safeNum(price);
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(price);
+    }).format(p);
   };
 
-  const getDiscountPercentage = (original: number, current: number) => {
-    return Math.round(((original - current) / original) * 100);
+  const getDiscountPercentage = (original?: number, current?: number) => {
+    const o = safeNum(original);
+    const c = safeNum(current);
+    if (o <= 0 || c >= o) return 0;
+    return Math.round(((o - c) / o) * 100);
   };
 
   return (
@@ -151,10 +170,7 @@ export function CoursesPage() {
               />
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full sm:w-48 h-12 border-gray-200">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Category" />
@@ -200,8 +216,7 @@ export function CoursesPage() {
         {/* Results */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-gray-900">
-            {filteredCourses.length}{" "}
-            {filteredCourses.length === 1 ? "Course" : "Courses"}
+            {filteredCourses.length} {filteredCourses.length === 1 ? "Course" : "Courses"}
             {searchTerm && ` for "${searchTerm}"`}
           </h2>
           <div className="text-sm text-gray-500">
@@ -213,12 +228,8 @@ export function CoursesPage() {
         {filteredCourses.length === 0 ? (
           <div className="text-center py-16">
             <BookOpen className="mx-auto h-16 w-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
-              No courses found
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Try adjusting your search or filter criteria
-            </p>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">No courses found</h3>
+            <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
             <Button
               onClick={() => {
                 setSearchTerm("");
@@ -233,10 +244,8 @@ export function CoursesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCourses.map((course) => {
               const isEnrolled = enrolledCourseIds.includes(course.id);
-              const discountPercentage = getDiscountPercentage(
-                course.originalPrice,
-                course.price
-              );
+              const imageSrc = course.image ?? "/placeholder-course.jpg";
+              const discountPercentage = getDiscountPercentage(course.originalPrice, course.price);
 
               return (
                 <Card
@@ -244,11 +253,7 @@ export function CoursesPage() {
                   className="group hover:shadow-course-card-hover transition-all duration-300 border-0 shadow-course-card bg-white rounded-xl overflow-hidden"
                 >
                   <div className="relative">
-                    <ImageWithFallback
-                      src={course.image}
-                      alt={course.title}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    <ImageWithFallback src={imageSrc} alt={course.title ?? "Course"} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
 
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                       {course.bestseller && (
@@ -265,11 +270,7 @@ export function CoursesPage() {
                     </div>
 
                     <div className="absolute top-3 right-3">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg"
-                      >
+                      <Button size="sm" variant="secondary" className="w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg">
                         <Heart className="h-4 w-4 text-gray-600" />
                       </Button>
                     </div>
@@ -286,78 +287,57 @@ export function CoursesPage() {
 
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <Badge
-                        variant="secondary"
-                        className="text-xs font-medium bg-blue-50 text-blue-700"
-                      >
-                        {course.category}
+                      <Badge variant="secondary" className="text-xs font-medium bg-blue-50 text-blue-700">
+                        {course.category ?? "Uncategorized"}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {course.level}
+                        {course.level ?? "Beginner"}
                       </Badge>
                     </div>
 
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-base leading-tight">
-                      {course.title}
+                      {course.title ?? "Untitled course"}
                     </h3>
 
-                    <p className="text-sm text-gray-600 mb-3">
-                      by {course.instructor}
-                    </p>
+                    <p className="text-sm text-gray-600 mb-3">by {course.instructor ?? "Unknown"}</p>
 
                     <div className="flex items-center space-x-2 mb-3">
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {course.rating}
-                        </span>
+                        <span className="text-sm font-medium text-gray-900">{safeNum(course.rating)}</span>
                       </div>
-                      <span className="text-sm text-gray-500">
-                        ({course.reviews.toLocaleString()} reviews)
-                      </span>
+                      <span className="text-sm text-gray-500">({safeNum(course.reviews).toLocaleString()} reviews)</span>
                     </div>
 
                     <div className="flex items-center space-x-4 mb-4 text-xs text-gray-500">
                       <div className="flex items-center space-x-1">
                         <Clock className="h-3 w-3" />
-                        <span>{course.duration}</span>
+                        <span>{course.duration ?? "—"}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Play className="h-3 w-3" />
-                        <span>{course.lessons} lessons</span>
+                        <span>{safeNum(course.lessons)} lessons</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Users className="h-3 w-3" />
-                        <span>{course.students.toLocaleString()}</span>
+                        <span>{safeNum(course.students).toLocaleString()}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-lg font-bold text-gray-900">
-                          {formatPrice(course.price)}
-                        </span>
-                        {course.originalPrice > course.price && (
-                          <span className="text-sm text-gray-500 line-through">
-                            {formatPrice(course.originalPrice)}
-                          </span>
+                        <span className="text-lg font-bold text-gray-900">{formatPrice(course.price)}</span>
+                        {safeNum(course.originalPrice) > safeNum(course.price) && (
+                          <span className="text-sm text-gray-500 line-through">{formatPrice(course.originalPrice)}</span>
                         )}
                       </div>
 
                       {isEnrolled ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-green-200 text-green-700 hover:bg-green-50"
-                        >
+                        <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
                           View Course
                         </Button>
                       ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleEnroll(course.id)}
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg"
-                        >
+                        <Button size="sm" onClick={() => handleEnroll(course.id)} className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg">
                           Enroll Now
                         </Button>
                       )}

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { useCourses } from "../contexts/CourseContext"; // aapka context hook
+import { useDispatch } from "react-redux";
+import { addCourse } from "../store/courseSlice";
 import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 
 interface CreateCourseForm {
   title: string;
@@ -12,7 +14,7 @@ interface CreateCourseForm {
 }
 
 export const CreateCoursePage: React.FC = () => {
-  const { createCourse } = useCourses();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [form, setForm] = useState<CreateCourseForm>({
@@ -50,16 +52,19 @@ export const CreateCoursePage: React.FC = () => {
       return;
     }
 
-    // Call context createCourse with form data
-    createCourse({
-      title: form.title,
-      description: form.description,
-      category: form.category,
-      // Agar aapke Course type mein ye fields nahi hain to hata dijiye ya adjust kariye
-      pdf: form.pdf,
-      video: form.video,
-      thumbnail: form.thumbnail,
-    });
+    dispatch(
+      addCourse({
+        id: uuidv4(),
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        pdf: form.pdf ? form.pdf.name : null,
+        video: form.video ? form.video.name : null,
+        thumbnail: form.thumbnail
+          ? URL.createObjectURL(form.thumbnail)
+          : null,
+      })
+    );
 
     setMessage("Course created successfully!");
     setForm({
@@ -71,8 +76,9 @@ export const CreateCoursePage: React.FC = () => {
       thumbnail: null,
     });
 
-    // Navigate back to dashboard
-    navigate("/");
+    setTimeout(() => {
+      navigate("/courses");
+    }, 800);
   };
 
   return (
@@ -84,7 +90,7 @@ export const CreateCoursePage: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Course Title */}
+        {/* Title */}
         <div>
           <label className="block font-medium mb-1">Course Title</label>
           <input
@@ -131,7 +137,7 @@ export const CreateCoursePage: React.FC = () => {
           </select>
         </div>
 
-        {/* PDF Upload */}
+        {/* PDF */}
         <div>
           <label className="block font-medium mb-1">Upload PDF</label>
           <input
@@ -143,7 +149,7 @@ export const CreateCoursePage: React.FC = () => {
           />
         </div>
 
-        {/* Video Upload */}
+        {/* Video */}
         <div>
           <label className="block font-medium mb-1">Upload Video</label>
           <input
@@ -155,9 +161,11 @@ export const CreateCoursePage: React.FC = () => {
           />
         </div>
 
-        {/* Thumbnail Upload */}
+        {/* Thumbnail */}
         <div>
-          <label className="block font-medium mb-1">Upload Thumbnail Image</label>
+          <label className="block font-medium mb-1">
+            Upload Thumbnail Image
+          </label>
           <input
             type="file"
             name="thumbnail"
@@ -167,7 +175,7 @@ export const CreateCoursePage: React.FC = () => {
           />
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <button
           type="submit"
           className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
